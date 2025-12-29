@@ -52,16 +52,6 @@ It is open source and completely free. The application also has a built in Demo 
 * Save recorded data
 * Load recorded data (for analysis)
 * CSV export
-* **Home Assistant integration** - Send OBD data to Home Assistant via webhook or API
-
-#### Home Assistant Integration
-
-* Real-time or SSID-triggered data transmission
-* Secure HTTPS with Bearer token authentication
-* Automatic sensor discovery in Home Assistant
-* Configurable update intervals
-* Perfect for home automation and vehicle monitoring
-* See [Home Assistant Integration Guide](docs/HOME_ASSISTANT.md) for setup details
 
 #### Customisation of PID data
 
@@ -73,6 +63,7 @@ It is open source and completely free. The application also has a built in Demo 
 * Development: [AndrOBD-Plugin repository](https://github.com/fr3ts0n/AndrOBD-Plugin)
 * Available Plugins:
   * [MQTT publisher](https://f-droid.org/en/packages/com.fr3ts0n.androbd.plugin.mqtt/) - Publish OBD data to MQTT broker
+  * [Home Assistant publisher](https://github.com/ian-morgan99/AndrOBD-HomeAssistantPlugin) - Send OBD data to Home Assistant via webhook or API
   * [GpsProvider](https://f-droid.org/en/packages/com.fr3ts0n.androbd.plugin.gpsprovider/) - Provide GPS data to AndrOBD
   * [SensorProvider](https://f-droid.org/en/packages/com.fr3ts0n.androbd.plugin.sensorprovider/) - Provide Accelerometer data to AndrOBD
 
