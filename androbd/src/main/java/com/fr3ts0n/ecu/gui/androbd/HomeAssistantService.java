@@ -110,8 +110,22 @@ public class HomeAssistantService {
         bearerToken = prefs.getString(PREF_HA_TOKEN, "");
         transmissionMode = prefs.getString(PREF_HA_TRANSMISSION_MODE, MODE_REALTIME);
         targetSsid = prefs.getString(PREF_HA_SSID, "");
-        updateInterval = prefs.getInt(PREF_HA_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL);
-        deviceId = prefs.getString(PREF_HA_DEVICE_ID, generateDeviceId());
+        
+        // Parse update interval from string preference
+        String intervalStr = prefs.getString(PREF_HA_UPDATE_INTERVAL, String.valueOf(DEFAULT_UPDATE_INTERVAL));
+        try {
+            updateInterval = Integer.parseInt(intervalStr);
+        } catch (NumberFormatException e) {
+            updateInterval = DEFAULT_UPDATE_INTERVAL;
+        }
+        
+        // Load or generate device ID
+        deviceId = prefs.getString(PREF_HA_DEVICE_ID, "");
+        if (deviceId.isEmpty()) {
+            deviceId = generateDeviceId();
+            // Persist the generated device ID
+            prefs.edit().putString(PREF_HA_DEVICE_ID, deviceId).apply();
+        }
         
         Log.d(TAG, "Preferences loaded - Enabled: " + enabled + ", Mode: " + transmissionMode);
     }
