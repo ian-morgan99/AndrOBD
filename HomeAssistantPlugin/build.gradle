@@ -1,0 +1,34 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.fr3ts0n.androbd.plugin.homeassistant'
+        minSdkVersion 15
+        targetSdkVersion 25
+        vectorDrawables.useSupportLibrary = true
+        versionCode 10000
+        versionName 'V1.0.0'
+    }
+
+    applicationVariants.configureEach { variant ->
+        variant.resValue "string", "app_version", variant.versionName
+    }
+
+    buildTypes {
+        release {
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    productFlavors {
+    }
+    namespace 'com.fr3ts0n.androbd.plugin.homeassistant'
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation project(':plugin')
+}
