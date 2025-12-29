@@ -196,7 +196,7 @@ public class HomeAssistantPlugin
         
         if (ITEMS_SELECTED.equals(key)) {
             Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
-            mSelectedItems = selectedSet != null ? new HashSet<>(selectedSet) : new HashSet<>();
+            mSelectedItems = new HashSet<>(selectedSet);
         }
     }
     
@@ -227,11 +227,11 @@ public class HomeAssistantPlugin
         
         // Load selected items
         Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
-        mSelectedItems = selectedSet != null ? new HashSet<>(selectedSet) : new HashSet<>();
+        mSelectedItems = new HashSet<>(selectedSet);
         
         // Load known items
         Set<String> knownSet = prefs.getStringSet(ITEMS_KNOWN, new HashSet<>());
-        mKnownItems = knownSet != null ? new HashSet<>(knownSet) : new HashSet<>();
+        mKnownItems = new HashSet<>(knownSet);
         
         Log.d(TAG, "Preferences loaded - Enabled: " + enabled + ", Mode: " + transmissionMode);
     }

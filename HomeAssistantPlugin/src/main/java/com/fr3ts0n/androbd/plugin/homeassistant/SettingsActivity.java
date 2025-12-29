@@ -92,7 +92,7 @@ public class SettingsActivity extends Activity {
             
             // Get known items from preferences (defensively copy to avoid modifications)
             Set<String> knownItemsSet = prefs.getStringSet(HomeAssistantPlugin.ITEMS_KNOWN, new HashSet<String>());
-            Set<String> knownItems = knownItemsSet != null ? new HashSet<>(knownItemsSet) : new HashSet<>();
+            Set<String> knownItems = new HashSet<>(knownItemsSet);
             
             if (knownItems.isEmpty()) {
                 // No items discovered yet
