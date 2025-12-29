@@ -14,7 +14,7 @@
     <string name="ha_transmission_mode">Transmission Mode</string>
     <string name="ha_transmission_mode_description">Choose when to send data to Home Assistant</string>
     <string name="ha_ssid">Target WiFi SSID</string>
-    <string name="ha_ssid_description">For SSID-triggered mode: Network name to trigger data transmission</string>
+    <string name="ha_ssid_description">Only used in SSID-triggered mode: Network name to trigger data transmission (leave empty if using real-time mode)</string>
     <string name="ha_update_interval">Update Interval (ms)</string>
     <string name="ha_update_interval_description">How often to send data (milliseconds, e.g., 5000 = 5 seconds)</string>
     <string name="data_items">Data Items</string>

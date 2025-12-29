@@ -195,7 +195,8 @@ public class HomeAssistantPlugin
         }
         
         if (ITEMS_SELECTED.equals(key)) {
-            mSelectedItems = (HashSet<String>) prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+            Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+            mSelectedItems = selectedSet != null ? new HashSet<>(selectedSet) : new HashSet<>();
         }
     }
     
@@ -225,10 +226,12 @@ public class HomeAssistantPlugin
         }
         
         // Load selected items
-        mSelectedItems = (HashSet<String>) prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+        Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+        mSelectedItems = selectedSet != null ? new HashSet<>(selectedSet) : new HashSet<>();
         
         // Load known items
-        mKnownItems = (HashSet<String>) prefs.getStringSet(ITEMS_KNOWN, new HashSet<>());
+        Set<String> knownSet = prefs.getStringSet(ITEMS_KNOWN, new HashSet<>());
+        mKnownItems = knownSet != null ? new HashSet<>(knownSet) : new HashSet<>();
         
         Log.d(TAG, "Preferences loaded - Enabled: " + enabled + ", Mode: " + transmissionMode);
     }
@@ -509,7 +512,7 @@ public class HomeAssistantPlugin
         JSONObject status = new JSONObject();
         
         status.put("device_id", deviceId);
-        status.put("app_version", getString(R.string.app_version));
+        status.put("app_version", "1.0.0"); // Plugin version
         status.put("device_model", Build.MODEL);
         status.put("android_version", Build.VERSION.RELEASE);
         status.put("transmission_mode", transmissionMode);
