@@ -9,6 +9,11 @@ jobs:
   build:
     # Run on the latest Ubuntu runner
     runs-on: ubuntu-latest
+    
+    # Explicitly set minimal permissions for security
+    permissions:
+      contents: read
+      actions: read
 
     steps:
       # Step 1: Check out the repository code
