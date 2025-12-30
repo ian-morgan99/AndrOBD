@@ -1,0 +1,70 @@
+name: Build Android APK
+
+# Trigger this workflow on push to any branch and on pull requests
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    # Run on the latest Ubuntu runner
+    runs-on: ubuntu-latest
+    
+    # Explicitly set minimal permissions for security
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      # Step 1: Check out the repository code
+      # Note: This project uses submodules, so we need to fetch them as well
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # Step 2: Set up JDK 17
+      # The project requires Java 17 for compilation (as specified in build.gradle)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # Step 3: Set up Android SDK
+      # This action installs the Android SDK and automatically accepts licenses
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Step 4: Make gradlew executable (in case permissions are lost)
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Step 5: Build Debug APK
+      # This creates a debug version of the app for testing
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      # Step 6: Build Release APK
+      # This creates a release version of the app (unsigned, as no keystore exists)
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      # Step 7: Upload Debug APK as artifact
+      # Makes the debug APK available for download from the workflow run
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: androbd-debug-apk
+          path: androbd/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Step 8: Upload Release APK as artifact
+      # Makes the release APK available for download from the workflow run
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: androbd-release-apk
+          path: androbd/build/outputs/apk/release/*.apk
+          if-no-files-found: error
