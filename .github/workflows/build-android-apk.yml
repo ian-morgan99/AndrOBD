@@ -1,7 +1,7 @@
 name: Build Android APK
 
 # Trigger this workflow on push to any branch and on pull requests
-'on':
+on:
   push:
   pull_request:
 
@@ -40,13 +40,11 @@ jobs:
       # This creates a debug version of the app for testing
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
-        continue-on-error: false
 
       # Step 6: Build Release APK
       # This creates a release version of the app (unsigned, as no keystore exists)
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
-        continue-on-error: false
 
       # Step 7: Upload Debug APK as artifact
       # Makes the debug APK available for download from the workflow run
