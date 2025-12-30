@@ -268,11 +268,6 @@ public class MainActivity extends PluginManager
     private boolean serviceBound = false;
     
     /**
-     * Home Assistant integration service
-     */
-    private HomeAssistantService homeAssistantService;
-    
-    /**
      * Service connection for background OBD service
      */
     private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -671,10 +666,6 @@ public class MainActivity extends PluginManager
                 break;
         }
         
-        // Initialize Home Assistant service
-        homeAssistantService = new HomeAssistantService(this);
-        homeAssistantService.start();
-        
         // Bind to background OBD service for continuous monitoring
         Intent serviceIntent = new Intent(this, ObdBackgroundService.class);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -786,12 +777,6 @@ public class MainActivity extends PluginManager
         
         // Clean up view hierarchy
         ModernUiUtils.cleanupViewHierarchy(findViewById(android.R.id.content));
-        
-        // Clean up Home Assistant service
-        if (homeAssistantService != null) {
-            homeAssistantService.cleanup();
-            homeAssistantService = null;
-        }
 
         super.onDestroy();
     }
@@ -1221,22 +1206,6 @@ public class MainActivity extends PluginManager
             EcuDataItem.MAX_ERROR_COUNT = getPrefsInt(PREF_DATA_DISABLE_MAX, 3);
         }
         
-        // Home Assistant service settings
-        if (key == null || 
-            HomeAssistantService.PREF_HA_ENABLED.equals(key) ||
-            HomeAssistantService.PREF_HA_URL.equals(key) ||
-            HomeAssistantService.PREF_HA_TOKEN.equals(key) ||
-            HomeAssistantService.PREF_HA_TRANSMISSION_MODE.equals(key) ||
-            HomeAssistantService.PREF_HA_SSID.equals(key) ||
-            HomeAssistantService.PREF_HA_UPDATE_INTERVAL.equals(key))
-        {
-            if (homeAssistantService != null)
-            {
-                homeAssistantService.stop();
-                homeAssistantService.start();
-            }
-        }
-
         // Customized PID display color preference
         if (key != null)
         {
@@ -1422,21 +1391,6 @@ public class MainActivity extends PluginManager
         {
             msg.obj = event;
             mHandler.sendMessage(msg);
-            
-            // Send data to Home Assistant if enabled
-            if (homeAssistantService != null && homeAssistantService.isEnabled())
-            {
-                ProcessVar pv = event.getPv();
-                if (pv != null)
-                {
-                    String key = pv.toString();
-                    Object value = pv.get(EcuDataPv.FID_VALUE);
-                    if (value != null)
-                    {
-                        homeAssistantService.updateData(key, value);
-                    }
-                }
-            }
         }
     }
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Empty array placeholder for dynamic data items -->
+    <string-array name="empty" translatable="false">
+    </string-array>
+</resources>

@@ -1,0 +1,16 @@
+# Add project specific ProGuard rules here.
+# By default, the flags in this file are appended to flags specified
+# in /opt/android-sdk/tools/proguard/proguard-android.txt
+
+# Keep plugin classes
+-keep class com.fr3ts0n.androbd.plugin.homeassistant.** { *; }
+
+# Keep classes that are accessed via reflection
+-keepclassmembers class * extends com.fr3ts0n.androbd.plugin.Plugin {
+    public <init>(...);
+}
+
+# Keep native methods
+-keepclassmembers class * {
+    native <methods>;
+}

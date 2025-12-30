@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="ha_enabled"
+        android:summary="@string/ha_enabled_description"
+        android:title="@string/ha_enabled"/>
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:inputType="textUri"
+        android:key="ha_url"
+        android:dependency="ha_enabled"
+        android:summary="@string/ha_url_description"
+        android:title="@string/ha_url"/>
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:inputType="text"
+        android:key="ha_token"
+        android:dependency="ha_enabled"
+        android:summary="@string/ha_token_description"
+        android:title="@string/ha_token"/>
+
+    <ListPreference
+        android:defaultValue="realtime"
+        android:dialogTitle="@string/ha_transmission_mode"
+        android:entries="@array/ha_transmission_mode_options"
+        android:entryValues="@array/ha_transmission_mode_values"
+        android:key="ha_transmission_mode"
+        android:dependency="ha_enabled"
+        android:summary="@string/ha_transmission_mode_description"
+        android:title="@string/ha_transmission_mode"/>
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:inputType="text"
+        android:key="ha_ssid"
+        android:dependency="ha_enabled"
+        android:summary="@string/ha_ssid_description"
+        android:title="@string/ha_ssid"/>
+
+    <EditTextPreference
+        android:defaultValue="5000"
+        android:inputType="number"
+        android:key="ha_update_interval"
+        android:dependency="ha_enabled"
+        android:summary="@string/ha_update_interval_description"
+        android:title="@string/ha_update_interval"/>
+
+    <MultiSelectListPreference
+        android:defaultValue="@array/empty"
+        android:dialogTitle="@string/data_items"
+        android:entries="@array/empty"
+        android:entryValues="@array/empty"
+        android:key="data_items"
+        android:dependency="ha_enabled"
+        android:summary="@string/data_items_description"
+        android:title="@string/data_items"/>
+
+</PreferenceScreen>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AndrOBD Home Assistant</string>
+    <string name="app_description">Home Assistant publisher plugin for AndrOBD</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Home Assistant Settings</string>
+    <string name="ha_enabled">Enable Home Assistant</string>
+    <string name="ha_enabled_description">Send OBD data to Home Assistant server</string>
+    <string name="ha_url">Home Assistant URL</string>
+    <string name="ha_url_description">Webhook or API URL (e.g., https://homeassistant.local:8123/api/webhook/your_webhook_id)</string>
+    <string name="ha_token">Bearer Token</string>
+    <string name="ha_token_description">Long-lived access token (optional, required for /api/states endpoints)</string>
+    <string name="ha_transmission_mode">Transmission Mode</string>
+    <string name="ha_transmission_mode_description">Choose when to send data to Home Assistant</string>
+    <string name="ha_ssid">Target WiFi SSID</string>
+    <string name="ha_ssid_description">Only used in SSID-triggered mode: Network name to trigger data transmission (leave empty if using real-time mode)</string>
+    <string name="ha_update_interval">Update Interval (ms)</string>
+    <string name="ha_update_interval_description">How often to send data (milliseconds, e.g., 5000 = 5 seconds)</string>
+    <string name="data_items">Data Items</string>
+    <string name="data_items_description">Select OBD data items to publish to Home Assistant</string>
+    
+    <!-- Transmission modes -->
+    <string-array name="ha_transmission_mode_options">
+        <item>Real-time</item>
+        <item>SSID Triggered</item>
+    </string-array>
+    <string-array name="ha_transmission_mode_values" translatable="false">
+        <item>realtime</item>
+        <item>ssid_triggered</item>
+    </string-array>
+    
+    <!-- Status messages -->
+    <string name="status_enabled">Home Assistant publishing enabled</string>
+    <string name="status_disabled">Home Assistant publishing disabled</string>
+    <string name="status_connecting">Connecting to Home Assistant…</string>
+    <string name="status_connected">Connected to Home Assistant</string>
+    <string name="status_error">Error connecting to Home Assistant</string>
+</resources>

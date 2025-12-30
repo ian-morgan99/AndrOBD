@@ -1,24 +1,7 @@
-/*
- * (C) Copyright 2024 by AndrOBD contributors
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
-package com.fr3ts0n.ecu.gui.androbd;
+package com.fr3ts0n.androbd.plugin.homeassistant;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -31,6 +14,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import com.fr3ts0n.androbd.plugin.Plugin;
+import com.fr3ts0n.androbd.plugin.PluginInfo;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,26 +31,44 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Service for integrating AndrOBD with Home Assistant
- * Sends OBD data to Home Assistant via webhook/API
+ * AndrOBD Home Assistant publishing plugin
+ * <p>
+ * Publish AndrOBD measurements to Home Assistant via webhook or API
  */
-public class HomeAssistantService {
-    private static final String TAG = "HomeAssistantService";
+public class HomeAssistantPlugin
+        extends Plugin
+        implements Plugin.ConfigurationHandler,
+                   Plugin.ActionHandler,
+                   Plugin.DataReceiver,
+                   SharedPreferences.OnSharedPreferenceChangeListener
+{
+    private static final String TAG = "HomeAssistantPlugin";
+    
+    static final PluginInfo myInfo = new PluginInfo("HomeAssistantPublisher",
+            HomeAssistantPlugin.class,
+            "Home Assistant publish AndrOBD measurements",
+            "Copyright (C) 2024 by AndrOBD contributors",
+            "GPLV3+",
+            "https://github.com/ian-morgan99/AndrOBD-HomeAssistantPlugin"
+    );
     
     // Preference keys
-    public static final String PREF_HA_ENABLED = "ha_enabled";
-    public static final String PREF_HA_URL = "ha_url";
-    public static final String PREF_HA_TOKEN = "ha_token";
-    public static final String PREF_HA_TRANSMISSION_MODE = "ha_transmission_mode";
-    public static final String PREF_HA_SSID = "ha_ssid";
-    public static final String PREF_HA_UPDATE_INTERVAL = "ha_update_interval";
-    public static final String PREF_HA_DEVICE_ID = "ha_device_id";
+    static final String PREF_HA_ENABLED = "ha_enabled";
+    static final String PREF_HA_URL = "ha_url";
+    static final String PREF_HA_TOKEN = "ha_token";
+    static final String PREF_HA_TRANSMISSION_MODE = "ha_transmission_mode";
+    static final String PREF_HA_SSID = "ha_ssid";
+    static final String PREF_HA_UPDATE_INTERVAL = "ha_update_interval";
+    static final String PREF_HA_DEVICE_ID = "ha_device_id";
+    static final String ITEMS_SELECTED = "data_items";
+    static final String ITEMS_KNOWN = "known_items";
     
     // Transmission modes
     public static final String MODE_REALTIME = "realtime";
@@ -73,8 +77,7 @@ public class HomeAssistantService {
     // Default values
     private static final int DEFAULT_UPDATE_INTERVAL = 5000; // 5 seconds
     
-    private final Context context;
-    private final SharedPreferences prefs;
+    private SharedPreferences prefs;
     private final ExecutorService executor;
     private final Handler handler;
     
@@ -86,19 +89,115 @@ public class HomeAssistantService {
     private int updateInterval = DEFAULT_UPDATE_INTERVAL;
     private String deviceId = "";
     
-    private final Map<String, Object> dataBuffer = new HashMap<>();
+    private final Map<String, String> dataBuffer = new HashMap<>();
     private boolean configSent = false;
     private long lastUpdateTime = 0;
     
     private Runnable updateTask;
     
-    public HomeAssistantService(Context context) {
-        this.context = context;
-        this.prefs = PreferenceManager.getDefaultSharedPreferences(context);
+    /**
+     * Set of items which are selected to be published
+     */
+    protected static HashSet<String> mSelectedItems = new HashSet<>();
+    
+    /**
+     * Set of items which are known to the plugin
+     */
+    protected static HashSet<String> mKnownItems = new HashSet<>();
+    
+    public HomeAssistantPlugin() {
         this.executor = Executors.newSingleThreadExecutor();
         this.handler = new Handler(Looper.getMainLooper());
-        
+    }
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        this.prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(this);
         loadPreferences();
+    }
+    
+    @Override
+    public void onDestroy() {
+        stop();
+        executor.shutdown();
+        prefs.unregisterOnSharedPreferenceChangeListener(this);
+        super.onDestroy();
+    }
+    
+    @Override
+    public PluginInfo getPluginInfo() {
+        return myInfo;
+    }
+    
+    @Override
+    public void performConfigure() {
+        Intent cfgIntent = new Intent(this, SettingsActivity.class);
+        cfgIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(cfgIntent);
+    }
+    
+    @Override
+    public void performAction() {
+        // Manual trigger to send data immediately
+        if (enabled && !dataBuffer.isEmpty()) {
+            transmitData();
+        }
+    }
+    
+    @Override
+    public void onDataListUpdate(String[] strings) {
+        // Update list of known data items
+        for (String item : strings) {
+            mKnownItems.add(item);
+        }
+        
+        // Store known items in preferences
+        prefs.edit().putStringSet(ITEMS_KNOWN, mKnownItems).apply();
+    }
+    
+    @Override
+    public void onDataUpdate(String key, String value) {
+        if (!enabled) {
+            return;
+        }
+        
+        // Only publish selected items (if any are selected)
+        if (!mSelectedItems.isEmpty() && !mSelectedItems.contains(key)) {
+            return;
+        }
+        
+        synchronized (dataBuffer) {
+            dataBuffer.put(key, value);
+        }
+        
+        // For realtime mode with frequent updates, transmit is handled by scheduled task
+        // For SSID mode, check if we should transmit now
+        if (MODE_SSID_TRIGGERED.equals(transmissionMode) && shouldTransmit()) {
+            transmitData();
+        }
+    }
+    
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key == null || 
+            PREF_HA_ENABLED.equals(key) ||
+            PREF_HA_URL.equals(key) ||
+            PREF_HA_TOKEN.equals(key) ||
+            PREF_HA_TRANSMISSION_MODE.equals(key) ||
+            PREF_HA_SSID.equals(key) ||
+            PREF_HA_UPDATE_INTERVAL.equals(key)) {
+            
+            stop();
+            loadPreferences();
+            start();
+        }
+        
+        if (ITEMS_SELECTED.equals(key)) {
+            Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+            mSelectedItems = new HashSet<>(selectedSet);
+        }
     }
     
     /**
@@ -123,9 +222,16 @@ public class HomeAssistantService {
         deviceId = prefs.getString(PREF_HA_DEVICE_ID, "");
         if (deviceId.isEmpty()) {
             deviceId = generateDeviceId();
-            // Persist the generated device ID
             prefs.edit().putString(PREF_HA_DEVICE_ID, deviceId).apply();
         }
+        
+        // Load selected items
+        Set<String> selectedSet = prefs.getStringSet(ITEMS_SELECTED, new HashSet<>());
+        mSelectedItems = new HashSet<>(selectedSet);
+        
+        // Load known items
+        Set<String> knownSet = prefs.getStringSet(ITEMS_KNOWN, new HashSet<>());
+        mKnownItems = new HashSet<>(knownSet);
         
         Log.d(TAG, "Preferences loaded - Enabled: " + enabled + ", Mode: " + transmissionMode);
     }
@@ -142,8 +248,6 @@ public class HomeAssistantService {
      * Start the Home Assistant service
      */
     public void start() {
-        loadPreferences();
-        
         if (!enabled) {
             Log.d(TAG, "Home Assistant service is disabled");
             return;
@@ -232,7 +336,7 @@ public class HomeAssistantService {
             return false;
         }
         
-        WifiManager wifiManager = (WifiManager) context.getApplicationContext()
+        WifiManager wifiManager = (WifiManager) getApplicationContext()
                 .getSystemService(Context.WIFI_SERVICE);
         
         if (wifiManager == null) {
@@ -256,8 +360,7 @@ public class HomeAssistantService {
      * Check if device has network connectivity
      */
     private boolean hasNetworkConnectivity() {
-        ConnectivityManager cm = (ConnectivityManager) context
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         
         if (cm == null) {
             return false;
@@ -281,25 +384,6 @@ public class HomeAssistantService {
     }
     
     /**
-     * Update OBD data value
-     */
-    public void updateData(String key, Object value) {
-        if (!enabled) {
-            return;
-        }
-        
-        synchronized (dataBuffer) {
-            dataBuffer.put(key, value);
-        }
-        
-        // For realtime mode with frequent updates, transmit is handled by scheduled task
-        // For SSID mode, check if we should transmit now
-        if (MODE_SSID_TRIGGERED.equals(transmissionMode) && shouldTransmit()) {
-            transmitData();
-        }
-    }
-    
-    /**
      * Transmit data to Home Assistant
      */
     private void transmitData() {
@@ -307,7 +391,7 @@ public class HomeAssistantService {
             return;
         }
         
-        Map<String, Object> dataToSend;
+        Map<String, String> dataToSend;
         synchronized (dataBuffer) {
             dataToSend = new HashMap<>(dataBuffer);
         }
@@ -319,7 +403,7 @@ public class HomeAssistantService {
     /**
      * Send data to Home Assistant via HTTP POST
      */
-    private void sendToHomeAssistant(Map<String, Object> data) {
+    private void sendToHomeAssistant(Map<String, String> data) {
         HttpURLConnection connection = null;
         
         try {
@@ -380,7 +464,7 @@ public class HomeAssistantService {
     /**
      * Build JSON payload for Home Assistant
      */
-    private JSONObject buildPayload(Map<String, Object> data) throws JSONException {
+    private JSONObject buildPayload(Map<String, String> data) throws JSONException {
         JSONObject payload = new JSONObject();
         
         // Include config and status on first transmission
@@ -392,7 +476,7 @@ public class HomeAssistantService {
         
         // Add OBD data
         JSONObject obdData = new JSONObject();
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
+        for (Map.Entry<String, String> entry : data.entrySet()) {
             obdData.put(entry.getKey(), entry.getValue());
         }
         payload.put("obd_data", obdData);
@@ -407,7 +491,7 @@ public class HomeAssistantService {
     /**
      * Build config object for initial payload
      */
-    private JSONObject buildConfigObject(Map<String, Object> data) throws JSONException {
+    private JSONObject buildConfigObject(Map<String, String> data) throws JSONException {
         JSONObject config = new JSONObject();
         
         // Add metadata for each data field
@@ -428,7 +512,7 @@ public class HomeAssistantService {
         JSONObject status = new JSONObject();
         
         status.put("device_id", deviceId);
-        status.put("app_version", context.getString(R.string.app_version));
+        status.put("app_version", "1.0.0"); // Plugin version
         status.put("device_model", Build.MODEL);
         status.put("android_version", Build.VERSION.RELEASE);
         status.put("transmission_mode", transmissionMode);
@@ -484,34 +568,5 @@ public class HomeAssistantService {
         }
         
         return "";
-    }
-    
-    /**
-     * Check if Home Assistant service is enabled
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-    
-    /**
-     * Set whether Home Assistant service is enabled
-     */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        prefs.edit().putBoolean(PREF_HA_ENABLED, enabled).apply();
-        
-        if (enabled) {
-            start();
-        } else {
-            stop();
-        }
-    }
-    
-    /**
-     * Clean up resources
-     */
-    public void cleanup() {
-        stop();
-        executor.shutdown();
     }
 }
