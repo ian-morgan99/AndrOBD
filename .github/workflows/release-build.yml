@@ -36,10 +36,8 @@ jobs:
         run: ./gradlew assembleRelease --stacktrace
       
       - name: Upload APKs to Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             androbd/build/outputs/apk/debug/*.apk
             androbd/build/outputs/apk/release/*.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
