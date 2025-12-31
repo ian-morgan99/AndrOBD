@@ -2,6 +2,9 @@
 
 # AndrOBD Build Script
 # This script automates the build process for the AndrOBD project
+# 
+# IMPORTANT: This script must be run from the project root directory
+# Usage: ./build.sh [build|debug|release|clean|test]
 
 set -e  # Exit on error
 
@@ -23,7 +26,10 @@ if ! command -v java &> /dev/null; then
     echo "Java is not installed or not in PATH"
     exit 1
 fi
-JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
+JAVA_VERSION=$(java -version 2>&1 | awk -F'"' '/version/ {print $2; exit}')
+if [ -z "$JAVA_VERSION" ]; then
+    JAVA_VERSION=$(java -version 2>&1 | head -n 1)
+fi
 echo -e "${GREEN}OK${NC} (Version: $JAVA_VERSION)"
 
 # Check for Android SDK
@@ -33,7 +39,7 @@ if [ -z "$ANDROID_HOME" ] && [ -z "$ANDROID_SDK_ROOT" ]; then
     echo "ANDROID_HOME or ANDROID_SDK_ROOT not set"
     echo "Build may fail if Android SDK is not properly configured"
 else
-    SDK_PATH=${ANDROID_HOME:-$ANDROID_SDK_ROOT}
+    SDK_PATH="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
     echo -e "${GREEN}OK${NC} (Path: $SDK_PATH)"
 fi
 
@@ -110,8 +116,12 @@ if [ $BUILD_EXIT_CODE -eq 0 ]; then
     if [ "$BUILD_TYPE" = "debug" ] || [ "$BUILD_TYPE" = "release" ] || [ "$BUILD_TYPE" = "build" ]; then
         echo
         echo "Build outputs:"
-        if [ -d "androbd/build/outputs/apk" ]; then
-            find androbd/build/outputs/apk -name "*.apk" -type f
+        # Ensure we're looking for APKs relative to project root
+        APK_DIR="androbd/build/outputs/apk"
+        if [ -d "$APK_DIR" ]; then
+            find "$APK_DIR" -name "*.apk" -type f
+        else
+            echo "Note: APK output directory not found at $APK_DIR"
         fi
     fi
 else
