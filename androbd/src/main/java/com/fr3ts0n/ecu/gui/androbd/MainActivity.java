@@ -34,6 +34,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -158,6 +159,7 @@ public class MainActivity extends PluginManager
     private static final int REQUEST_SETTINGS = 5;
     private static final int REQUEST_CONNECT_DEVICE_USB = 6;
     private static final int REQUEST_GRAPH_DISPLAY_DONE = 7;
+    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 8;
     /**
      * app exit parameters
      */
@@ -548,15 +550,22 @@ public class MainActivity extends PluginManager
         requestWindowFeature(Window.FEATURE_PROGRESS);
 
         // get additional permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        // Note: For Android 10+ (API 29+), we use scoped storage and don't need WRITE_EXTERNAL_STORAGE
+        // For Android 6-9, request storage permissions if needed
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M 
+            && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
         {
-            // Storage Permissions
+            // Storage Permissions (only for API 23-28)
             final int REQUEST_EXTERNAL_STORAGE = 1;
             final String[] PERMISSIONS_STORAGE = {
                     Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
             };
             requestPermissions(PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        {
             // Workaround for FileUriExposedException in Android >= M
             StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
             StrictMode.setVmPolicy(builder.build());
@@ -1095,6 +1104,39 @@ public class MainActivity extends PluginManager
                 // let context know that we are in list mode again ...
                 dataViewMode = DATA_VIEW_MODE.LIST;
                 break;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
+    {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS)
+        {
+            boolean allGranted = true;
+            for (int result : grantResults)
+            {
+                if (result != PackageManager.PERMISSION_GRANTED)
+                {
+                    allGranted = false;
+                    break;
+                }
+            }
+            
+            if (allGranted)
+            {
+                // Permissions granted, retry connecting
+                setMode(MODE.ONLINE);
+            }
+            else
+            {
+                // Permissions denied, show message and stay offline
+                Toast.makeText(this, 
+                    "Bluetooth permissions are required to connect to OBD devices", 
+                    Toast.LENGTH_LONG).show();
+                setMode(MODE.OFFLINE);
+            }
         }
     }
 
@@ -1768,6 +1810,37 @@ public class MainActivity extends PluginManager
     }
 
     /**
+     * Check and request Bluetooth permissions for Android 12+ (API 31+)
+     * @return true if permissions are granted, false if need to request
+     */
+    private boolean checkBluetoothPermissions()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        {
+            // Android 12+ requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN permissions
+            boolean hasConnect = checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) 
+                == PackageManager.PERMISSION_GRANTED;
+            boolean hasScan = checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) 
+                == PackageManager.PERMISSION_GRANTED;
+            
+            if (!hasConnect || !hasScan)
+            {
+                // Request both permissions
+                requestPermissions(
+                    new String[]{
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    },
+                    REQUEST_BLUETOOTH_PERMISSIONS
+                );
+                return false;
+            }
+        }
+        // For Android < 12, the manifest permissions are sufficient
+        return true;
+    }
+
+    /**
      * set new operating mode
      *
      * @param mode new mode
@@ -1795,6 +1868,13 @@ public class MainActivity extends PluginManager
                     switch (CommService.medium)
                     {
                         case BLUETOOTH:
+                            // Check Bluetooth permissions for Android 12+
+                            if (!checkBluetoothPermissions())
+                            {
+                                // Permissions will be requested, mode will be set after grant
+                                return;
+                            }
+                            
                             if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled())
                             {
                                 Toast.makeText(this, getString(R.string.none_found), Toast.LENGTH_SHORT).show();

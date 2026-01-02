@@ -18,11 +18,14 @@
 
 package com.fr3ts0n.ecu.gui.androbd;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.ParcelUuid;
 
@@ -61,10 +64,25 @@ public class BtCommService extends CommService
 	{
 		super(context, handler);
 
+		// Check for Bluetooth permissions on Android 12+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+		{
+			if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) 
+				!= PackageManager.PERMISSION_GRANTED)
+			{
+				// Permission not granted, can't cancel discovery
+				log.warning("BLUETOOTH_CONNECT permission not granted");
+				return;
+			}
+		}
+
 		// Always cancel discovery because it will slow down a connection
 		// Member fields
 		BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
-		mAdapter.cancelDiscovery();
+		if (mAdapter != null && mAdapter.isEnabled())
+		{
+			mAdapter.cancelDiscovery();
+		}
 		
 		// set up protocol handlers
 		elm.addTelegramWriter(ser);

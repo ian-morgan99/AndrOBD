@@ -18,10 +18,13 @@
 
 package com.fr3ts0n.ecu.gui.androbd;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -80,6 +83,19 @@ public class BtDeviceListActivity extends Activity
 			return;
 		}
 		
+		// Check for Bluetooth permissions on Android 12+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+		{
+			if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) 
+				!= PackageManager.PERMISSION_GRANTED)
+			{
+				// Permission not granted, can't list devices
+				String noDevices = getResources().getText(R.string.none_paired).toString();
+				mPairedDevicesArrayAdapter.add(noDevices);
+				return;
+			}
+		}
+		
 		// Get a set of currently paired devices
 		Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 
@@ -104,6 +120,17 @@ public class BtDeviceListActivity extends Activity
 	{
 		public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3)
 		{
+			// Check for Bluetooth permissions on Android 12+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+			{
+				if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) 
+					!= PackageManager.PERMISSION_GRANTED)
+				{
+					// Permission not granted, can't cancel discovery
+					return;
+				}
+			}
+			
 			// Cancel discovery because it's costly and we're about to connect
 			mBtAdapter.cancelDiscovery();
 

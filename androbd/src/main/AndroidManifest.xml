@@ -1,20 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- start/stop bluetooth adapter -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <!-- connect/disconnect bluetooth devices -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- Bluetooth permissions for SDK < 31 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    
+    <!-- Bluetooth permissions for SDK 31+ -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    
     <!-- to keep Bluetooth measurement running even when screen is inactive -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- allow saving screenshots -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    
+    <!-- Storage permissions for SDK < 29 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    
     <!-- allow access to WIFI adapter -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    
     <!-- post notifications (SDK 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
     <!-- For foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
     <application
         android:allowBackup="true"
@@ -81,7 +96,8 @@
         <service
             android:name=".ObdBackgroundService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>
