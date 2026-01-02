@@ -79,7 +79,7 @@ public class BtCommService extends CommService
 		// Always cancel discovery because it will slow down a connection
 		// Member fields
 		BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (mAdapter != null)
+		if (mAdapter != null && mAdapter.isEnabled())
 		{
 			mAdapter.cancelDiscovery();
 		}

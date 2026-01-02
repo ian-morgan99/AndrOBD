@@ -34,6 +34,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -1116,7 +1117,7 @@ public class MainActivity extends PluginManager
             boolean allGranted = true;
             for (int result : grantResults)
             {
-                if (result != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                if (result != PackageManager.PERMISSION_GRANTED)
                 {
                     allGranted = false;
                     break;
@@ -1818,9 +1819,9 @@ public class MainActivity extends PluginManager
         {
             // Android 12+ requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN permissions
             boolean hasConnect = checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) 
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                == PackageManager.PERMISSION_GRANTED;
             boolean hasScan = checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) 
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                == PackageManager.PERMISSION_GRANTED;
             
             if (!hasConnect || !hasScan)
             {
