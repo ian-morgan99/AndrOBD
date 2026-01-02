@@ -6,9 +6,7 @@ android {
     defaultConfig {
         applicationId 'com.fr3ts0n.ecu.gui.androbd'
         minSdkVersion 17
-        // SDK 25 to allow background service mechanism for plugins
-        //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 25
+        targetSdkVersion 34
         versionCode 20616
         versionName 'V2.6.16'
 
